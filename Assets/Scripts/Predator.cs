@@ -9,6 +9,12 @@ public class Predator : MonoBehaviour
     public float speed = 1f;
     public float visionRange = 5f;
 
+    [Header("Territory Settings")]
+    public Territorio myTerritory;  // referencia a su territorio
+    public Vector3 territoryCenter;   // centro del territorio
+    public float territoryRadius = 5f; // radio del territorio
+    public bool isOutsideAtStart = true; // si empieza fuera
+
     [Header("Predator States")]
     public bool isAlive = true;
     public PredatorState currentState = PredatorState.Exploring;
@@ -18,7 +24,31 @@ public class Predator : MonoBehaviour
 
     private void Start()
     {
-        destination = transform.position;
+        if (myTerritory == null)
+        {
+            Territorio[] allTerritories = FindObjectsByType<Territorio>(FindObjectsSortMode.None); // busca todos los territorios
+            float minDist = Mathf.Infinity;
+
+            foreach (var t in allTerritories) // elige el más cercano
+            {
+                float dist = Vector3.Distance(transform.position, t.transform.position);
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    myTerritory = t;
+                }
+            }
+        }
+
+        // ahora configuro su centro y radio
+        territoryCenter = myTerritory.transform.position;
+        territoryRadius = myTerritory.radius;
+
+        if (isOutsideAtStart)
+        {
+            transform.position = territoryCenter + (Vector3)(Random.insideUnitCircle.normalized * (territoryRadius * 2f));
+            currentState = PredatorState.ReturningToTerritory;
+        }
     }
 
     public void Simulate(float h)
@@ -38,6 +68,9 @@ public class Predator : MonoBehaviour
             case PredatorState.Eating:
                 Eat();
                 break;
+            case PredatorState.ReturningToTerritory:
+                ReturnToTerritory();
+                break;
         }
 
         Move();
@@ -47,19 +80,31 @@ public class Predator : MonoBehaviour
 
     void Explore()
     {
-        // Si hay comida a la vista, cambiar de estado
-        Bunny nearestBunny = FindNearestBunny();
-        if (nearestBunny != null)
+        // primero revisa si está fuera de su territorio
+        if (!IsInsideTerritory())
         {
-            currentState = PredatorState.SearchingFood;
-            destination = nearestBunny.transform.position;
+            currentState = PredatorState.ReturningToTerritory;
             return;
         }
 
-        // Si ya llegó al destino, elegir uno nuevo
+        // si ve una presa
+        Bunny nearestBunny = FindNearestBunny();
+        if (nearestBunny != null)
+        {
+            bool preyInside = IsPointInsideTerritory(nearestBunny.transform.position);
+
+            if (preyInside || Random.value < 0.5f) // 50% chance de salir
+            {
+                currentState = PredatorState.SearchingFood;
+                destination = nearestBunny.transform.position;
+            }
+            return;
+        }
+
+        // patrullaje normal
         if (Vector3.Distance(transform.position, destination) < 0.1f)
         {
-            SelectNewDestination();
+            SelectNewDestinationWithinTerritory();
         }
     }
 
@@ -68,14 +113,12 @@ public class Predator : MonoBehaviour
         Bunny nearestBunny = FindNearestBunny();
         if (nearestBunny == null)
         {
-            // Si no hay comida, volver a explorar
             currentState = PredatorState.Exploring;
             return;
         }
 
         destination = nearestBunny.transform.position;
 
-        // Si está suficientemente cerca, pasar a comer
         if (Vector3.Distance(transform.position, nearestBunny.transform.position) < 0.2f)
         {
             currentState = PredatorState.Eating;
@@ -94,38 +137,23 @@ public class Predator : MonoBehaviour
                 Destroy(food.gameObject);
             }
         }
-
-        // Después de comer vuelve a explorar
         currentState = PredatorState.Exploring;
     }
 
-    void Flee()
+    void ReturnToTerritory()
     {
-        SelectNewDestination();
-        currentState = PredatorState.Exploring;
+        destination = territoryCenter;
+
+        if (Vector3.Distance(transform.position, territoryCenter) < territoryRadius * 0.9f)
+        {
+            currentState = PredatorState.Exploring;
+        }
     }
 
-    void SelectNewDestination()
+    void SelectNewDestinationWithinTerritory()
     {
-        Vector3 direction = new Vector3(
-            Random.Range(-visionRange, visionRange),
-            Random.Range(-visionRange, visionRange),
-            0
-        );
-
-        Vector3 targetPoint = transform.position + direction;
-
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, visionRange, LayerMask.GetMask("Obstacles"));
-
-        if (hit.collider != null)
-        {
-            float offset = transform.localScale.magnitude * 0.5f;
-            destination = hit.point - (Vector2)direction.normalized * offset;
-        }
-        else
-        {
-            destination = targetPoint;
-        }
+        Vector2 randomPos = (Vector2)territoryCenter + Random.insideUnitCircle * territoryRadius;
+        destination = new Vector3(randomPos.x, randomPos.y, 0);
     }
 
     void Move()
@@ -153,6 +181,22 @@ public class Predator : MonoBehaviour
         }
     }
 
+    void Die()
+    {
+        isAlive = false;
+        Destroy(gameObject);
+    }
+
+    bool IsInsideTerritory()
+    {
+        return Vector3.Distance(transform.position, territoryCenter) <= territoryRadius;
+    }
+
+    bool IsPointInsideTerritory(Vector3 point)
+    {
+        return Vector3.Distance(point, territoryCenter) <= territoryRadius;
+    }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
@@ -161,14 +205,13 @@ public class Predator : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawSphere(destination, 0.2f);
 
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawLine(transform.position, destination);
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(territoryCenter, territoryRadius);
     }
 
     Bunny FindNearestBunny()
     {
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Bunnies"));
-        Debug.Log($"Predator {name} encontró {hits.Length} colliders en su rango");
         Bunny nearest = null;
         float minDist = Mathf.Infinity;
 
@@ -185,7 +228,6 @@ public class Predator : MonoBehaviour
                 }
             }
         }
-
         return nearest;
     }
 }
