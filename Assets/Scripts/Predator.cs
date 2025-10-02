@@ -112,10 +112,13 @@ public class Predator : MonoBehaviour
 
     void SearchFood()
     {
-        Bunny nearestBunny = FindNearestBunny();
+        Bunny nearestBunny = FindNearestBunny(); // busca la presa más cercana
+        huntTimer += h; // incrementa el temporizador de caza
+
         if (nearestBunny == null)
         {
             currentState = PredatorState.Exploring;
+            huntTimer = 0f;
             return;
         }
 
@@ -124,7 +127,22 @@ public class Predator : MonoBehaviour
         if (Vector3.Distance(transform.position, nearestBunny.transform.position) < 0.2f)
         {
             currentState = PredatorState.Eating;
+            huntTimer = 0f; // resetea el temporizador
+            return; // llegó a la presa
         }
+
+        if (huntTimer >= huntDuration)
+        {
+            currentState = PredatorState.Exploring;
+            huntTimer = 0f; // resetea el temporizador
+            return; // se rinde
+        }
+    }
+
+    void HuntingFailed()
+    {
+        energy -= 2f; // penalización por fallo
+        currentState = PredatorState.Exploring; // vuelve a explorar
     }
 
     void Eat()
