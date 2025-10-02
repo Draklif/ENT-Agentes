@@ -1,26 +1,42 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class FoodSpawner : MonoBehaviour
 {
     [Header("Spawner Settings")]
     public GameObject foodPrefab;
-    public float spawnInterval = 2f;
-    public int maxFood = 50;
+    public float baseSpawnInterval = 2f; // 🔄 MODIFICADO: base
+    public int baseMaxFood = 50;         // 🔄 MODIFICADO: base
 
     [Header("Spawn Area (Rectangular)")]
     public Vector2 areaSize = new Vector2(20, 20);
 
     private float time = 0f;
+    private WeatherSystem weather; // ✅ NUEVO: Referencia al sistema climático
+
+    private void Start()
+    {
+        weather = FindFirstObjectByType<WeatherSystem>(); // ✅ NUEVO: Buscar sistema climático
+    }
 
     public void Simulate(float h)
     {
         time += h;
 
-        if (time >= spawnInterval)
+        // ✅ MODIFICADO: Ajustar según clima
+        float currentSpawnInterval = baseSpawnInterval;
+        int currentMaxFood = baseMaxFood;
+
+        if (weather != null)
+        {
+            currentSpawnInterval /= weather.GetFoodSpawnMultiplier();
+            currentMaxFood = (int)(baseMaxFood * weather.GetFoodSpawnMultiplier());
+        }
+
+        if (time >= currentSpawnInterval)
         {
             time = 0f;
 
-            if (CountFood() < maxFood)
+            if (CountFood() < currentMaxFood)
             {
                 SpawnFood();
             }

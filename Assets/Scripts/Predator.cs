@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class Predator : MonoBehaviour
 {
@@ -6,8 +6,8 @@ public class Predator : MonoBehaviour
     public float energy = 10;
     public float age = 0;
     public float maxAge = 20;
-    public float speed = 1f;
-    public float visionRange = 5f;
+    public float baseSpeed = 1f;
+    public float baseVisionRange = 5f;
 
     [Header("Predator States")]
     public bool isAlive = true;
@@ -15,10 +15,12 @@ public class Predator : MonoBehaviour
 
     private Vector3 destination;
     private float h;
+    private WeatherSystem weather; // ✅ NUEVO: Referencia al sistema climático
 
     private void Start()
     {
         destination = transform.position;
+        weather = FindFirstObjectByType<WeatherSystem>(); // ✅ NUEVO: Buscar sistema climático
     }
 
     public void Simulate(float h)
@@ -47,7 +49,6 @@ public class Predator : MonoBehaviour
 
     void Explore()
     {
-        // Si hay comida a la vista, cambiar de estado
         Bunny nearestBunny = FindNearestBunny();
         if (nearestBunny != null)
         {
@@ -56,7 +57,6 @@ public class Predator : MonoBehaviour
             return;
         }
 
-        // Si ya lleg� al destino, elegir uno nuevo
         if (Vector3.Distance(transform.position, destination) < 0.1f)
         {
             SelectNewDestination();
@@ -68,14 +68,12 @@ public class Predator : MonoBehaviour
         Bunny nearestBunny = FindNearestBunny();
         if (nearestBunny == null)
         {
-            // Si no hay comida, volver a explorar
             currentState = PredatorState.Exploring;
             return;
         }
 
         destination = nearestBunny.transform.position;
 
-        // Si est� suficientemente cerca, pasar a comer
         if (Vector3.Distance(transform.position, nearestBunny.transform.position) < 0.2f)
         {
             currentState = PredatorState.Eating;
@@ -95,7 +93,6 @@ public class Predator : MonoBehaviour
             }
         }
 
-        // Despu�s de comer vuelve a explorar
         currentState = PredatorState.Exploring;
     }
 
@@ -108,14 +105,14 @@ public class Predator : MonoBehaviour
     void SelectNewDestination()
     {
         Vector3 direction = new Vector3(
-            Random.Range(-visionRange, visionRange),
-            Random.Range(-visionRange, visionRange),
+            Random.Range(-GetCurrentVisionRange(), GetCurrentVisionRange()),
+            Random.Range(-GetCurrentVisionRange(), GetCurrentVisionRange()),
             0
         );
 
         Vector3 targetPoint = transform.position + direction;
 
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, visionRange, LayerMask.GetMask("Obstacles"));
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, GetCurrentVisionRange(), LayerMask.GetMask("Obstacles"));
 
         if (hit.collider != null)
         {
@@ -133,10 +130,10 @@ public class Predator : MonoBehaviour
         transform.position = Vector3.MoveTowards(
             transform.position,
             destination,
-            speed * h
+            GetCurrentSpeed() * h // ✅ MODIFICADO: Usar velocidad afectada por clima
         );
 
-        energy -= speed * h;
+        energy -= GetCurrentSpeed() * h * GetCurrentEnergyConsumption(); // ✅ MODIFICADO: Consumo afectado por clima
     }
 
     void Age()
@@ -156,7 +153,7 @@ public class Predator : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, visionRange);
+        Gizmos.DrawWireSphere(transform.position, GetCurrentVisionRange());
 
         Gizmos.color = Color.red;
         Gizmos.DrawSphere(destination, 0.2f);
@@ -167,8 +164,7 @@ public class Predator : MonoBehaviour
 
     Bunny FindNearestBunny()
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Bunnies"));
-        Debug.Log($"Predator {name} encontr� {hits.Length} colliders en su rango");
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, GetCurrentVisionRange(), LayerMask.GetMask("Bunnies"));
         Bunny nearest = null;
         float minDist = Mathf.Infinity;
 
@@ -187,5 +183,52 @@ public class Predator : MonoBehaviour
         }
 
         return nearest;
+    }
+
+    // ✅✅✅ NUEVOS MÉTODOS PARA EFECTOS CLIMÁTICOS ✅✅✅
+    float GetCurrentSpeed()
+    {
+        float speed = baseSpeed;
+
+        if (weather != null)
+        {
+            speed *= weather.GetAnimalSpeedMultiplier();
+
+            if (weather.IsNight())
+            {
+                speed *= 0.7f;
+            }
+        }
+
+        return speed;
+    }
+
+    float GetCurrentVisionRange()
+    {
+        float vision = baseVisionRange;
+
+        if (weather != null)
+        {
+            vision *= weather.GetVisionRangeMultiplier();
+
+            if (weather.IsNight())
+            {
+                vision *= 0.6f;
+            }
+        }
+
+        return vision;
+    }
+
+    float GetCurrentEnergyConsumption()
+    {
+        float consumption = 1f;
+
+        if (weather != null)
+        {
+            consumption *= weather.GetEnergyConsumptionMultiplier();
+        }
+
+        return consumption;
     }
 }
