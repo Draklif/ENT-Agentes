@@ -3,5 +3,6 @@ public enum PredatorState
     Exploring,
     SearchingFood,
     Eating,
-    ReturningToTerritory
+    ReturningToTerritory,
+    HuntingFailed
 }

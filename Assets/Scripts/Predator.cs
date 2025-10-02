@@ -8,6 +8,8 @@ public class Predator : MonoBehaviour
     public float maxAge = 20;
     public float speed = 1f;
     public float visionRange = 5f;
+    public float huntDuration = 7f; // tiempo máximo para cazar
+    public float huntTimer = 0f;
 
     [Header("Territory Settings")]
     public Territorio myTerritory;  // referencia a su territorio
