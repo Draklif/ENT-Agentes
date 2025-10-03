@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4898280201629810012}
   m_Layer: 8
   m_Name: Bunny
-  m_TagString: Untagged
+  m_TagString: Bunny
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -107,9 +107,9 @@ MonoBehaviour:
   energy: 10000
   age: 0
   maxAge: 60
-  isAlive: 1
   speed: 2
   visionRange: 5
+  isAlive: 1
   currentState: 0
 --- !u!58 &4898280201629810012
 CircleCollider2D:

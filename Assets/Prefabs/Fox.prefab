@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 2478447337859204611}
   m_Layer: 9
   m_Name: Fox
-  m_TagString: Untagged
+  m_TagString: Predator
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -107,9 +107,9 @@ MonoBehaviour:
   energy: 10000
   age: 0
   maxAge: 60
-  isAlive: 1
   speed: 1.5
   visionRange: 15
+  isAlive: 1
   currentState: 0
 --- !u!60 &2478447337859204611
 PolygonCollider2D:
