@@ -140,21 +140,21 @@ MonoBehaviour:
   spawnInterval: 2
   maxFood: 50
   areaSize: {x: 20, y: 20}
-  zones:
+  FertilidadZonas:
   - area:
       serializedVersion: 2
-      x: 1
-      y: 1
-      width: 1
-      height: 1
-    fertility: 0
+      x: -10
+      y: -5
+      width: 5
+      height: 10
+    fertility: 5
   - area:
       serializedVersion: 2
-      x: 1
-      y: 1
-      width: 1
-      height: 1
-    fertility: 0
+      x: 5
+      y: -5
+      width: 5
+      height: 10
+    fertility: 3
 --- !u!1001 &173114009
 PrefabInstance:
   m_ObjectHideFlags: 0
