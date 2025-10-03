@@ -186,6 +186,13 @@ public class Predator : MonoBehaviour
 
         return nearest;
     }
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Wall"))
+        {
+            SelectNewDestination();
+        }
+    }
 
     // visión efectiva con clima
     float EffectiveVision()
