@@ -59,19 +59,22 @@ public class Predator : MonoBehaviour
 
         this.h = h;
 
-        switch (currentState)
+        switch (currentState) // máquina de estados
         {
-            case PredatorState.Exploring:
+            case PredatorState.Exploring: // patrulla su territorio
                 Explore();
                 break;
-            case PredatorState.SearchingFood:
+            case PredatorState.SearchingFood: // si ve una presa, la persigue
                 SearchFood();
                 break;
-            case PredatorState.Eating:
+            case PredatorState.Eating: // si llega a la presa, come
                 Eat();
                 break;
-            case PredatorState.ReturningToTerritory:
+            case PredatorState.ReturningToTerritory: // si está fuera, vuelve
                 ReturnToTerritory();
+                break;
+            case PredatorState.HuntingFailed: // si falla, pierde energía y vuelve a explorar
+                HuntingFailed();
                 break;
         }
 
