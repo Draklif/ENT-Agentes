@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class ComidaPerecedde : MonoBehaviour
+public class ComidaPerecedera : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     public float lifetime = 10f; // Tiempo en segundos antes de desaparecer

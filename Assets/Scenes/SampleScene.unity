@@ -119,6 +119,42 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &121529691 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1958683738666648899, guid: 8de4af53ceff1834790bd88384ae3fdb, type: 3}
+  m_PrefabInstance: {fileID: 9046554192830107691}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &121529694
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 121529691}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 635d02f2c680d3844b4d737b6f235075, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FertilidadFoodSpawner
+  foodPrefab: {fileID: 4587566397736210300, guid: 5616d510ab6298c4f951d5ab051e6975, type: 3}
+  spawnInterval: 2
+  maxFood: 50
+  areaSize: {x: 20, y: 20}
+  zones:
+  - area:
+      serializedVersion: 2
+      x: 1
+      y: 1
+      width: 1
+      height: 1
+    fertility: 0
+  - area:
+      serializedVersion: 2
+      x: 1
+      y: 1
+      width: 1
+      height: 1
+    fertility: 0
 --- !u!1001 &173114009
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -627,7 +663,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1958683738666648899, guid: 8de4af53ceff1834790bd88384ae3fdb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 121529694}
   m_SourcePrefab: {fileID: 100100000, guid: 8de4af53ceff1834790bd88384ae3fdb, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

@@ -1,62 +1,76 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
+
+[System.Serializable]
+public class FertilidadZona
+{
+    public Rect area;        // Área rectangular donde puede aparecer comida
+    [Range(0, 10)]
+    public int fertility;    // Nivel de fertilidad (0 = baja, 10 = alta)
+}
 
 public class FertilidadFoodSpawner : FoodSpawner
 {
     [Header("Zonas de Fertilidad")]
-    public FertilidadZonas[] zones;
+    public List<FertilidadZona> FertilidadZonas = new List<FertilidadZona>();
 
-    // 🔹 Sobrescribe el SpawnFood del padre para usar zonas
     protected override void SpawnFood()
     {
-        if (zones == null || zones.Length == 0)
-        {
-            base.SpawnFood(); // fallback a spawn normal
-            return;
-        }
+        if (CountFood() >= maxFood || FertilidadZonas.Count == 0) return;
 
-        // Elegir una zona según fertilidad (peso probabilístico)
-        FertilidadZonas selectedZone = ChooseZone();
+        // Elegir una zona según su fertilidad (peso)
+        FertilidadZona selectedZone = ElegirZonaPorFertilidad();
 
-        // Elegir un punto aleatorio dentro de esa zona
+        // Generar posición aleatoria dentro de esa zona
         float x = Random.Range(selectedZone.area.xMin, selectedZone.area.xMax);
         float y = Random.Range(selectedZone.area.yMin, selectedZone.area.yMax);
-
         Vector2 spawnPos = new Vector2(x, y);
 
         Instantiate(foodPrefab, spawnPos, Quaternion.identity);
     }
 
-    // Método auxiliar para elegir zona según probabilidad
-    private FertilidadZonas ChooseZone()
+    private FertilidadZona ElegirZonaPorFertilidad()
     {
-        float total = 0f;
-        foreach (var zone in zones) total += zone.fertility;
+        int totalWeight = 0;
+        foreach (var zone in FertilidadZonas)
+            totalWeight += zone.fertility;
 
-        float r = Random.Range(0, total);
-        float acum = 0f;
+        int rand = Random.Range(0, totalWeight);
+        int cumulative = 0;
 
-        foreach (var zone in zones)
+        foreach (var zone in FertilidadZonas)
         {
-            acum += zone.fertility;
-            if (r <= acum) return zone;
+            cumulative += zone.fertility;
+            if (rand < cumulative)
+                return zone;
         }
 
-        return zones[0]; // fallback por seguridad
+        return FertilidadZonas[0]; // fallback
     }
 
-    // 🔹 Sobrescribimos el Gizmos del padre para dibujar también las zonas
     protected override void OnDrawGizmosSelected()
     {
-        base.OnDrawGizmosSelected(); // dibuja el área del spawner normal
+        base.OnDrawGizmosSelected();
 
-        if (zones != null)
+        if (FertilidadZonas != null)
         {
-            foreach (var zone in zones)
+            foreach (var zone in FertilidadZonas)
             {
-                Gizmos.color = Color.green;
+                // Colorear según fertilidad
+                if (zone.fertility >= 5)
+                    Gizmos.color = new Color(0f, 1f, 0f, 0.3f); // Verde (alta fertilidad)
+                else
+                    Gizmos.color = new Color(1f, 1f, 0f, 0.3f); // Amarillo (baja fertilidad)
+
+                Gizmos.DrawCube(zone.area.center, zone.area.size);
+
+                // Contorno blanco
+                Gizmos.color = Color.white;
                 Gizmos.DrawWireCube(zone.area.center, zone.area.size);
             }
         }
     }
 }
+
+
 
