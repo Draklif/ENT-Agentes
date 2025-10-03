@@ -5,7 +5,8 @@ public enum ClimateState
 {
     Normal,
     Rain,
-    Storm
+    Storm,
+    Drought
 }
 
 public class ClimateManager : MonoBehaviour
@@ -41,7 +42,7 @@ public class ClimateManager : MonoBehaviour
 
     void ChangeClimate()
     {
-        int rand = UnityEngine.Random.Range(0, 3); // 0 = Normal, 1 = Lluvia, 2 = Tormenta
+        int rand = UnityEngine.Random.Range(0, 4); // 0 = Normal, 1 = Lluvia, 2 = Tormenta, 3 = Sequía
         currentClimate = (ClimateState)rand;
         Debug.Log("Nuevo clima: " + currentClimate);
 

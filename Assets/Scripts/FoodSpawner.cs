@@ -20,6 +20,13 @@ public class FoodSpawner : MonoBehaviour
         {
             time = 0f;
 
+            // Verificamos si el clima es Sequía
+            if (ClimateManager.Instance != null && ClimateManager.Instance.currentClimate == ClimateState.Drought)
+            {
+                Debug.Log("Sequía activa: no aparece comida nueva.");
+                return; // Evitamos el spawn
+            }
+
             if (CountFood() < maxFood)
             {
                 SpawnFood();
@@ -50,3 +57,4 @@ public class FoodSpawner : MonoBehaviour
         Gizmos.DrawWireCube(transform.position, new Vector3(areaSize.x, areaSize.y, 1));
     }
 }
+

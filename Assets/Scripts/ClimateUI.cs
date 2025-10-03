@@ -27,6 +27,9 @@ public class ClimateUI : MonoBehaviour
             case ClimateState.Storm:
                 climateText.text = "Clima: Tormenta";
                 break;
+            case ClimateState.Drought:
+                climateText.text = "Sequía: No aparece comida nueva";
+                break;
         }
     }
 }
