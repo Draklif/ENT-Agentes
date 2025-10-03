@@ -148,12 +148,12 @@ public class Bunny : MonoBehaviour
     {
         // Elegir dirección contraria al depredador
         Vector3 fleeDir = (transform.position - GetNearestPredatorPosition()).normalized;
-        destination = transform.position + fleeDir * visionRange;
+        destination = transform.position + fleeDir * EffectiveVision();
 
         // Después de huir vuelve a explorar
         currentState = BunnyState.Exploring;
 
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, fleeDir, visionRange, LayerMask.GetMask("Obstacles"));
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, fleeDir, EffectiveVision(), LayerMask.GetMask("Obstacles"));
 
         if (hit.collider != null)
         {
@@ -162,7 +162,7 @@ public class Bunny : MonoBehaviour
         }
         else
         {
-            destination = transform.position + fleeDir * visionRange;
+            destination = transform.position + fleeDir * EffectiveVision();
         }
     }
 
@@ -176,7 +176,7 @@ public class Bunny : MonoBehaviour
 
         Vector3 targetPoint = transform.position + direction;
 
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, visionRange, LayerMask.GetMask("Obstacles"));
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, EffectiveVision(), LayerMask.GetMask("Obstacles"));
 
         if (hit.collider != null)
         {
@@ -203,6 +203,10 @@ public class Bunny : MonoBehaviour
     void Age()
     {
         age += h;
+
+        // Envejecimiento: reduce velocidad con la edad
+        float ageFactor = Mathf.Clamp01(age / maxAge);
+        speed = Mathf.Lerp(1f, 0.3f, ageFactor);
     }
 
     void CheckState()
@@ -217,7 +221,7 @@ public class Bunny : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, visionRange);
+        Gizmos.DrawWireSphere(transform.position, EffectiveVision());
 
         Gizmos.color = Color.red;
         Gizmos.DrawSphere(destination, 0.2f);
@@ -228,13 +232,13 @@ public class Bunny : MonoBehaviour
 
     bool PredatorInRange()
     {
-        Collider2D predator = Physics2D.OverlapCircle(transform.position, visionRange, LayerMask.GetMask("Foxes"));
+        Collider2D predator = Physics2D.OverlapCircle(transform.position, EffectiveVision(), LayerMask.GetMask("Foxes"));
         return predator != null;
     }
 
     Vector3 GetNearestPredatorPosition()
     {
-        Collider2D[] predators = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Foxes"));
+        Collider2D[] predators = Physics2D.OverlapCircleAll(transform.position, EffectiveVision(), LayerMask.GetMask("Foxes"));
         float minDist = Mathf.Infinity;
         Vector3 pos = transform.position;
 
@@ -253,8 +257,7 @@ public class Bunny : MonoBehaviour
 
     Food FindNearestFood()
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Food"));
-        Debug.Log($"Bunny {name} encontró {hits.Length} colliders en su rango");
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, EffectiveVision(), LayerMask.GetMask("Food"));
         Food nearest = null;
         float minDist = Mathf.Infinity;
 
@@ -273,5 +276,12 @@ public class Bunny : MonoBehaviour
         }
 
         return nearest;
+    }
+
+    // calcula visión efectiva según clima
+    float EffectiveVision()
+    {
+        ClimateManager cm = FindFirstObjectByType<ClimateManager>();
+        return visionRange * (cm != null ? cm.GetVisionMultiplier() : 1f);
     }
 }

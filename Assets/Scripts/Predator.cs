@@ -47,7 +47,6 @@ public class Predator : MonoBehaviour
 
     void Explore()
     {
-        // Si hay comida a la vista, cambiar de estado
         Bunny nearestBunny = FindNearestBunny();
         if (nearestBunny != null)
         {
@@ -56,7 +55,6 @@ public class Predator : MonoBehaviour
             return;
         }
 
-        // Si ya llegó al destino, elegir uno nuevo
         if (Vector3.Distance(transform.position, destination) < 0.1f)
         {
             SelectNewDestination();
@@ -68,14 +66,12 @@ public class Predator : MonoBehaviour
         Bunny nearestBunny = FindNearestBunny();
         if (nearestBunny == null)
         {
-            // Si no hay comida, volver a explorar
             currentState = PredatorState.Exploring;
             return;
         }
 
         destination = nearestBunny.transform.position;
 
-        // Si está suficientemente cerca, pasar a comer
         if (Vector3.Distance(transform.position, nearestBunny.transform.position) < 0.2f)
         {
             currentState = PredatorState.Eating;
@@ -90,12 +86,11 @@ public class Predator : MonoBehaviour
             Bunny food = foodHit.GetComponent<Bunny>();
             if (food != null)
             {
-                energy += food.age;
+                energy += food.energy * 0.5f; // gana parte de la energía del conejo
                 Destroy(food.gameObject);
             }
         }
 
-        // Después de comer vuelve a explorar
         currentState = PredatorState.Exploring;
     }
 
@@ -115,7 +110,7 @@ public class Predator : MonoBehaviour
 
         Vector3 targetPoint = transform.position + direction;
 
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, visionRange, LayerMask.GetMask("Obstacles"));
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, EffectiveVision(), LayerMask.GetMask("Obstacles"));
 
         if (hit.collider != null)
         {
@@ -142,6 +137,10 @@ public class Predator : MonoBehaviour
     void Age()
     {
         age += h;
+
+        // Envejecimiento: pierde velocidad con la edad
+        float ageFactor = Mathf.Clamp01(age / maxAge);
+        speed = Mathf.Lerp(1f, 0.3f, ageFactor);
     }
 
     void CheckState()
@@ -156,7 +155,7 @@ public class Predator : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, visionRange);
+        Gizmos.DrawWireSphere(transform.position, EffectiveVision());
 
         Gizmos.color = Color.red;
         Gizmos.DrawSphere(destination, 0.2f);
@@ -167,8 +166,7 @@ public class Predator : MonoBehaviour
 
     Bunny FindNearestBunny()
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Bunnies"));
-        Debug.Log($"Predator {name} encontró {hits.Length} colliders en su rango");
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, EffectiveVision(), LayerMask.GetMask("Bunnies"));
         Bunny nearest = null;
         float minDist = Mathf.Infinity;
 
@@ -187,5 +185,12 @@ public class Predator : MonoBehaviour
         }
 
         return nearest;
+    }
+
+    // visión efectiva con clima
+    float EffectiveVision()
+    {
+        ClimateManager cm = FindFirstObjectByType<ClimateManager>();
+        return visionRange * (cm != null ? cm.GetVisionMultiplier() : 1f);
     }
 }
