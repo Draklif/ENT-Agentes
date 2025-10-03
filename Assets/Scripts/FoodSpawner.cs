@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class FoodSpawner : MonoBehaviour
 {
@@ -12,9 +12,9 @@ public class FoodSpawner : MonoBehaviour
 
     private float time = 0f;
 
-    public void Simulate(float h)
+    public void Simulate(float deltaTime)
     {
-        time += h;
+        time += deltaTime;
 
         if (time >= spawnInterval)
         {
@@ -27,7 +27,8 @@ public class FoodSpawner : MonoBehaviour
         }
     }
 
-    void SpawnFood()
+    // 🔹 Método virtual para que lo puedan sobrescribir las clases hijas
+    protected virtual void SpawnFood()
     {
         Vector2 spawnPos = new Vector2(
             Random.Range(-areaSize.x / 2f, areaSize.x / 2f),
@@ -39,14 +40,17 @@ public class FoodSpawner : MonoBehaviour
         Instantiate(foodPrefab, spawnPos, Quaternion.identity);
     }
 
-    int CountFood()
+    protected int CountFood()
     {
         return FindObjectsByType<Food>(FindObjectsSortMode.InstanceID).Length;
     }
 
-    private void OnDrawGizmosSelected()
+    // 🔹 También marcado como virtual para poder sobrescribirlo en hijos
+    protected virtual void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireCube(transform.position, new Vector3(areaSize.x, areaSize.y, 1));
     }
 }
+
+
