@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3519612019460498571}
   - component: {fileID: 4280179364882799912}
-  - component: {fileID: 793088727801571113}
   - component: {fileID: 4898280201629810012}
   m_Layer: 8
   m_Name: Bunny
@@ -92,25 +91,6 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &793088727801571113
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9157068989046605382}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96923a34ca963ea49a74acf3900ab59d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Bunny
-  energy: 10000
-  age: 0
-  maxAge: 60
-  isAlive: 1
-  speed: 2
-  visionRange: 5
-  currentState: 0
 --- !u!58 &4898280201629810012
 CircleCollider2D:
   m_ObjectHideFlags: 0

@@ -6,8 +6,12 @@ public class Bunny : MonoBehaviour
     public float energy = 10;
     public float age = 0;
     public float maxAge = 20;
-    public float speed = 1f;
+    public float baseSpeed = 20f;
     public float visionRange = 5f;
+
+    [Header("Movement Area")] //límites para mantenerlos dentro del mapa
+    public Vector2 areaCenter = Vector2.zero;
+    public Vector2 areaSize = new Vector2(20, 20);
 
     [Header("Bunny States")]
     public bool isAlive = true;
@@ -52,14 +56,12 @@ public class Bunny : MonoBehaviour
 
     void EvaluateState()
     {
-        // 1. Si hay un depredador cerca -> huir
         if (PredatorInRange())
         {
             currentState = BunnyState.Fleeing;
             return;
         }
 
-        // 2. Si la energía está baja -> buscar comida
         if (energy < 500f)
         {
             Food nearestFood = FindNearestFood();
@@ -71,7 +73,6 @@ public class Bunny : MonoBehaviour
             }
         }
 
-        // 3. Si está encima de la comida -> comer
         Collider2D foodHit = Physics2D.OverlapCircle(transform.position, 0.2f, LayerMask.GetMask("Food"));
         if (foodHit != null)
         {
@@ -83,7 +84,6 @@ public class Bunny : MonoBehaviour
             }
         }
 
-        // 4. Si no pasa nada -> explorar
         if (currentState == BunnyState.Eating == false)
         {
             currentState = BunnyState.Exploring;
@@ -92,7 +92,6 @@ public class Bunny : MonoBehaviour
 
     void Explore()
     {
-        // Si hay comida a la vista, cambiar de estado
         Food nearestFood = FindNearestFood();
         if (nearestFood != null)
         {
@@ -101,7 +100,6 @@ public class Bunny : MonoBehaviour
             return;
         }
 
-        // Si ya llegó al destino, elegir uno nuevo
         if (Vector3.Distance(transform.position, destination) < 0.1f)
         {
             SelectNewDestination();
@@ -113,14 +111,12 @@ public class Bunny : MonoBehaviour
         Food nearestFood = FindNearestFood();
         if (nearestFood == null)
         {
-            // Si no hay comida, volver a explorar
             currentState = BunnyState.Exploring;
             return;
         }
 
         destination = nearestFood.transform.position;
 
-        // Si está suficientemente cerca, pasar a comer
         if (Vector3.Distance(transform.position, nearestFood.transform.position) < 0.2f)
         {
             currentState = BunnyState.Eating;
@@ -140,21 +136,14 @@ public class Bunny : MonoBehaviour
             }
         }
 
-        // Después de comer vuelve a explorar
         currentState = BunnyState.Exploring;
     }
 
     void Flee()
     {
-        // Elegir dirección contraria al depredador
         Vector3 fleeDir = (transform.position - GetNearestPredatorPosition()).normalized;
-        destination = transform.position + fleeDir * EffectiveVision();
-
-        // Después de huir vuelve a explorar
-        currentState = BunnyState.Exploring;
 
         RaycastHit2D hit = Physics2D.Raycast(transform.position, fleeDir, EffectiveVision(), LayerMask.GetMask("Obstacles"));
-
         if (hit.collider != null)
         {
             float offset = transform.localScale.magnitude * 0.5f;
@@ -164,6 +153,11 @@ public class Bunny : MonoBehaviour
         {
             destination = transform.position + fleeDir * EffectiveVision();
         }
+
+        //limitar a área válida
+        destination = ClampToArea(destination);
+
+        currentState = BunnyState.Exploring;
     }
 
     void SelectNewDestination()
@@ -187,26 +181,32 @@ public class Bunny : MonoBehaviour
         {
             destination = targetPoint;
         }
+
+        // mantener dentro del área
+        destination = ClampToArea(destination);
     }
 
     void Move()
     {
+        ClimateManager cm = FindFirstObjectByType<ClimateManager>();
+        float climateMultiplier = (cm != null ? cm.GetSpeedMultiplier() : 1f);
+
+        float finalSpeed = baseSpeed * climateMultiplier; //separar baseSpeed
         transform.position = Vector3.MoveTowards(
             transform.position,
             destination,
-            speed * h
+            finalSpeed * h
         );
 
-        energy -= speed * h;
+        energy -= finalSpeed * h;
     }
 
     void Age()
     {
         age += h;
 
-        // Envejecimiento: reduce velocidad con la edad
         float ageFactor = Mathf.Clamp01(age / maxAge);
-        speed = Mathf.Lerp(1f, 0.3f, ageFactor);
+        baseSpeed = Mathf.Lerp(1f, 0.3f, ageFactor);
     }
 
     void CheckState()
@@ -222,12 +222,14 @@ public class Bunny : MonoBehaviour
     {
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(transform.position, EffectiveVision());
-
         Gizmos.color = Color.red;
         Gizmos.DrawSphere(destination, 0.2f);
-
         Gizmos.color = Color.yellow;
         Gizmos.DrawLine(transform.position, destination);
+
+        //mostrar área de movimiento
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireCube(areaCenter, new Vector3(areaSize.x, areaSize.y, 0));
     }
 
     bool PredatorInRange()
@@ -278,10 +280,21 @@ public class Bunny : MonoBehaviour
         return nearest;
     }
 
-    // calcula visión efectiva según clima
     float EffectiveVision()
     {
         ClimateManager cm = FindFirstObjectByType<ClimateManager>();
         return visionRange * (cm != null ? cm.GetVisionMultiplier() : 1f);
+    }
+
+    // mantener el conejo dentro del área de simulación
+    Vector3 ClampToArea(Vector3 pos)
+    {
+        float halfX = areaSize.x / 2f;
+        float halfY = areaSize.y / 2f;
+
+        pos.x = Mathf.Clamp(pos.x, areaCenter.x - halfX, areaCenter.x + halfX);
+        pos.y = Mathf.Clamp(pos.y, areaCenter.y - halfY, areaCenter.y + halfY);
+
+        return pos;
     }
 }

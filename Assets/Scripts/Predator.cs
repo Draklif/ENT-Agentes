@@ -6,7 +6,7 @@ public class Predator : MonoBehaviour
     public float energy = 10;
     public float age = 0;
     public float maxAge = 20;
-    public float speed = 1f;
+    public float speed = 20f;
     public float visionRange = 5f;
 
     [Header("Predator States")]

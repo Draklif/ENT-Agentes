@@ -12,19 +12,25 @@ public class FoodSpawner : MonoBehaviour
 
     private float time = 0f;
 
-    public void Simulate(float h)
+    void Update()
     {
-        time += h;
+        Simulate(Time.deltaTime);
+    }
+
+    public void Simulate(float delta)
+    {
+        time += delta;
 
         if (time >= spawnInterval)
         {
             time = 0f;
 
-            // Verificamos si el clima es Sequía
-            if (ClimateManager.Instance != null && ClimateManager.Instance.currentClimate == ClimateState.Drought)
+            // Si el clima es Sequía, no spawnea
+            if (ClimateManager.Instance != null &&
+                ClimateManager.Instance.CurrentClimate == ClimateManager.ClimateState.Drought)
             {
                 Debug.Log("Sequía activa: no aparece comida nueva.");
-                return; // Evitamos el spawn
+                return;
             }
 
             if (CountFood() < maxFood)
@@ -57,4 +63,5 @@ public class FoodSpawner : MonoBehaviour
         Gizmos.DrawWireCube(transform.position, new Vector3(areaSize.x, areaSize.y, 1));
     }
 }
+
 
