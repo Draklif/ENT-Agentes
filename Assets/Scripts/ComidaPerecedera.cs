@@ -2,23 +2,18 @@ using UnityEngine;
 
 public class ComidaPerecedera : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    public float lifetime = 10f; // Tiempo en segundos antes de desaparecer
+    [Header("Duración en ticks antes de desaparecer")]
+    public int lifetimeTicks = 10;
+    private int ticksAlive = 0;
 
-    private float timer;
-
-    void Start()
+    public void Simulate()
     {
-        timer = lifetime;
-    }
+        ticksAlive++;
 
-    void Update()
-    {
-        timer -= Time.deltaTime;
-
-        if (timer <= 0f)
+        if (ticksAlive >= lifetimeTicks)
         {
-            Destroy(gameObject); // Destruye la comida cuando caduca
+            Destroy(gameObject);
         }
     }
 }
+

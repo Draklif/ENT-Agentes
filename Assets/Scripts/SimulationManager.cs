@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -51,6 +51,15 @@ public class SimulationManager : MonoBehaviour
             }
         }
 
-        if (foodSpawner != null) foodSpawner.Simulate(secondsPerIteration);
+        if (foodSpawner != null)
+            foodSpawner.Simulate(secondsPerIteration);
+
+        //Tiempo de vida de la comida 
+        ComidaPerecedera[] foods = FindObjectsByType<ComidaPerecedera>(FindObjectsSortMode.None);
+        foreach (ComidaPerecedera food in foods)
+        {
+            if (food != null)
+                food.Simulate();
+        }
     }
 }
