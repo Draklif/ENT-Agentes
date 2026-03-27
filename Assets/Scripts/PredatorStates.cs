@@ -2,5 +2,7 @@ public enum PredatorState
 {
     Exploring,
     SearchingFood,
-    Eating
+    Eating,
+    Resting,
+
 }
