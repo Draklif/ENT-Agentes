@@ -8,6 +8,7 @@ public class Bunny : MonoBehaviour
     public float maxAge = 20;
     public float speed = 1f;
     public float visionRange = 5f;
+    public float climateStateVisionRange;
 
     [Header("Bunny States")]
     public bool isAlive = true;
@@ -26,6 +27,9 @@ public class Bunny : MonoBehaviour
         if (!isAlive) return;
 
         this.h = h;
+
+        climateStateVisionRange = visionRange * ClimateEventsManager.Instance.GetVisionMultiplier(); //Esta linea lo que hace es que a la vision normal la modifique multiplicando por 0.8 en lluvia entonces
+        // la vision se disminuira de 5f a 4f y en tormenta 0.5 de 5f a 2.5f y si está despejado se multiplica por 1 y sigue en visionRange q es 5f.  
 
         EvaluateState();
 
@@ -148,12 +152,12 @@ public class Bunny : MonoBehaviour
     {
         // Elegir dirección contraria al depredador
         Vector3 fleeDir = (transform.position - GetNearestPredatorPosition()).normalized;
-        destination = transform.position + fleeDir * visionRange;
+        destination = transform.position + fleeDir * climateStateVisionRange;
 
         // Después de huir vuelve a explorar
         currentState = BunnyState.Exploring;
 
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, fleeDir, visionRange, LayerMask.GetMask("Obstacles"));
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, fleeDir, climateStateVisionRange, LayerMask.GetMask("Obstacles"));
 
         if (hit.collider != null)
         {
@@ -162,21 +166,21 @@ public class Bunny : MonoBehaviour
         }
         else
         {
-            destination = transform.position + fleeDir * visionRange;
+            destination = transform.position + fleeDir * climateStateVisionRange;
         }
     }
 
     void SelectNewDestination()
     {
         Vector3 direction = new Vector3(
-            Random.Range(-visionRange, visionRange),
-            Random.Range(-visionRange, visionRange),
+            Random.Range(-climateStateVisionRange, climateStateVisionRange),
+            Random.Range(-climateStateVisionRange, climateStateVisionRange),
             0
         );
 
         Vector3 targetPoint = transform.position + direction;
 
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, visionRange, LayerMask.GetMask("Obstacles"));
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, climateStateVisionRange, LayerMask.GetMask("Obstacles"));
 
         if (hit.collider != null)
         {
@@ -217,7 +221,7 @@ public class Bunny : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, visionRange);
+        Gizmos.DrawWireSphere(transform.position, climateStateVisionRange);
 
         Gizmos.color = Color.red;
         Gizmos.DrawSphere(destination, 0.2f);
@@ -228,13 +232,13 @@ public class Bunny : MonoBehaviour
 
     bool PredatorInRange()
     {
-        Collider2D predator = Physics2D.OverlapCircle(transform.position, visionRange, LayerMask.GetMask("Foxes"));
+        Collider2D predator = Physics2D.OverlapCircle(transform.position, climateStateVisionRange, LayerMask.GetMask("Foxes"));
         return predator != null;
     }
 
     Vector3 GetNearestPredatorPosition()
     {
-        Collider2D[] predators = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Foxes"));
+        Collider2D[] predators = Physics2D.OverlapCircleAll(transform.position, climateStateVisionRange, LayerMask.GetMask("Foxes"));
         float minDist = Mathf.Infinity;
         Vector3 pos = transform.position;
 
@@ -253,7 +257,7 @@ public class Bunny : MonoBehaviour
 
     Food FindNearestFood()
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Food"));
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, climateStateVisionRange, LayerMask.GetMask("Food"));
         Debug.Log($"Bunny {name} encontró {hits.Length} colliders en su rango");
         Food nearest = null;
         float minDist = Mathf.Infinity;

@@ -7,7 +7,9 @@ public class Predator : MonoBehaviour
     public float age = 0;
     public float maxAge = 20;
     public float speed = 1f;
+    public float initialSpeed;
     public float visionRange = 5f;
+    public float climateStateVisionRange;
 
     [Header("Predator States")]
     public bool isAlive = true;
@@ -19,6 +21,7 @@ public class Predator : MonoBehaviour
     private void Start()
     {
         destination = transform.position;
+        initialSpeed = speed; // Guarda el valor base del depredador
     }
 
     public void Simulate(float h)
@@ -27,6 +30,10 @@ public class Predator : MonoBehaviour
 
         this.h = h;
 
+        climateStateVisionRange = visionRange * ClimateEventsManager.Instance.GetVisionMultiplier(); //Esta linea lo que hace es que a la vision normal la modifique multiplicando por 0.8 en lluvia entonces
+        // la vision se disminuira de 8f a 6.5f y en tormenta de 8f a 4f y si está despejado se multiplica por 1 y sigue en visionRange q es 5f.
+
+       
         switch (currentState)
         {
             case PredatorState.Exploring:
@@ -108,14 +115,14 @@ public class Predator : MonoBehaviour
     void SelectNewDestination()
     {
         Vector3 direction = new Vector3(
-            Random.Range(-visionRange, visionRange),
-            Random.Range(-visionRange, visionRange),
+            Random.Range(-climateStateVisionRange, climateStateVisionRange),
+            Random.Range(-climateStateVisionRange, climateStateVisionRange),
             0
         );
 
         Vector3 targetPoint = transform.position + direction;
 
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, visionRange, LayerMask.GetMask("Obstacles"));
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, climateStateVisionRange, LayerMask.GetMask("Obstacles"));
 
         if (hit.collider != null)
         {
@@ -142,6 +149,9 @@ public class Predator : MonoBehaviour
     void Age()
     {
         age += h;
+
+        float speedReduction = Mathf.Floor(age / 12f) * 0.2f; //Divide la edad en 12 (Math.floor redondea) cada 12 años del depredador se reduce la velocidad 0.2f
+        speed = Mathf.Max(0.1f, initialSpeed - speedReduction);// Resta la velocidad base con la reduccion de los años hasta llegar a max 0.1f
     }
 
     void CheckState()
@@ -156,7 +166,7 @@ public class Predator : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, visionRange);
+        Gizmos.DrawWireSphere(transform.position, climateStateVisionRange);
 
         Gizmos.color = Color.red;
         Gizmos.DrawSphere(destination, 0.2f);
@@ -167,7 +177,7 @@ public class Predator : MonoBehaviour
 
     Bunny FindNearestBunny()
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Bunnies"));
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, climateStateVisionRange, LayerMask.GetMask("Bunnies"));
         Debug.Log($"Predator {name} encontró {hits.Length} colliders en su rango");
         Bunny nearest = null;
         float minDist = Mathf.Infinity;
