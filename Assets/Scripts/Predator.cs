@@ -9,6 +9,11 @@ public class Predator : MonoBehaviour
     public float speed = 1f;
     public float visionRange = 5f;
 
+    [Header("Resting")]
+    public Transform den;
+    public float restTime = 5f;
+    private float restTimer = 0f;
+
     [Header("Predator States")]
     public bool isAlive = true;
     public PredatorState currentState = PredatorState.Exploring;
@@ -38,6 +43,9 @@ public class Predator : MonoBehaviour
             case PredatorState.Eating:
                 Eat();
                 break;
+            case PredatorState.Resting:
+                Rest();
+                break;
         }
 
         Move();
@@ -56,7 +64,7 @@ public class Predator : MonoBehaviour
             return;
         }
 
-        // Si ya lleg� al destino, elegir uno nuevo
+        // Si ya lleg� al destino, elegir uno nuevo
         if (Vector3.Distance(transform.position, destination) < 0.1f)
         {
             SelectNewDestination();
@@ -75,7 +83,7 @@ public class Predator : MonoBehaviour
 
         destination = nearestBunny.transform.position;
 
-        // Si est� suficientemente cerca, pasar a comer
+        // Si est� suficientemente cerca, pasar a comer
         if (Vector3.Distance(transform.position, nearestBunny.transform.position) < 0.2f)
         {
             currentState = PredatorState.Eating;
@@ -95,7 +103,7 @@ public class Predator : MonoBehaviour
             }
         }
 
-        // Despu�s de comer vuelve a explorar
+        // Despu�s de comer vuelve a explorar
         currentState = PredatorState.Exploring;
     }
 
@@ -145,13 +153,19 @@ public class Predator : MonoBehaviour
     }
 
     void CheckState()
+{
+    // 👇 NUEVO: si está bajo de energía → descansar
+    if (energy < 3f && currentState != PredatorState.Resting)
     {
-        if (energy <= 0 || age > maxAge)
-        {
-            isAlive = false;
-            Destroy(gameObject);
-        }
+        currentState = PredatorState.Resting;
+        return;
     }
+    if (energy <= 0 || age > maxAge)
+    {
+        isAlive = false;
+        Destroy(gameObject);
+    }
+}
 
     private void OnDrawGizmosSelected()
     {
@@ -168,7 +182,7 @@ public class Predator : MonoBehaviour
     Bunny FindNearestBunny()
     {
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Bunnies"));
-        Debug.Log($"Predator {name} encontr� {hits.Length} colliders en su rango");
+        Debug.Log($"Predator {name} encontr� {hits.Length} colliders en su rango");
         Bunny nearest = null;
         float minDist = Mathf.Infinity;
 
@@ -188,4 +202,28 @@ public class Predator : MonoBehaviour
 
         return nearest;
     }
+    void Rest()
+    {
+    if (den == null) return;
+
+    // Ir a la madriguera
+    if (Vector3.Distance(transform.position, den.position) > 0.2f)
+    {
+        destination = den.position;
+    }
+    else
+    {
+        // Ya llegó → quedarse quieto
+        restTimer += h;
+
+        if (restTimer >= restTime)
+        {
+            restTimer = 5f;
+            energy = 10f; // recupera energía (ajústalo si quieres)
+            currentState = PredatorState.Exploring;
+        }
+    Debug.Log("Depredador descansando");
+    Debug.Log("Depredador terminó de descansar");
+    }
+}
 }
