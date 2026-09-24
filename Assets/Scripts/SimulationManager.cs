@@ -10,7 +10,6 @@ public class SimulationManager : MonoBehaviour
     public List<Bunny> bunnies = new List<Bunny>();
     public List<Predator> predators = new List<Predator>();
     public FoodSpawner foodSpawner;
-    public Ciclodedia dayNight;
 
     void Start()
     {
@@ -22,7 +21,6 @@ public class SimulationManager : MonoBehaviour
 
         foodSpawner = FindFirstObjectByType<FoodSpawner>();
 
-        dayNight = FindFirstObjectByType<Ciclodedia>();
     }
 
     void Update()
@@ -56,6 +54,5 @@ public class SimulationManager : MonoBehaviour
 
         if (foodSpawner != null) foodSpawner.Simulate(secondsPerIteration);
 
-        if (dayNight != null) dayNight.Simulate(secondsPerIteration);
     }
 }
