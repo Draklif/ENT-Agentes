@@ -16,9 +16,18 @@ public class Bunny : MonoBehaviour
     private Vector3 destination;
     private float h;
 
+    // NUEVO: Guarda desde dónde viene el peligro cuando otro conejo avisa
+    private Vector3 fleeFromPosition;
+
+    // NUEVO: Indica si este conejo recibió la alerta de otro conejo
+    private bool receivedFleeAlert = false;
+
     private void Start()
     {
         destination = transform.position;
+
+        // NUEVO: Inicializa la posición del peligro
+        fleeFromPosition = transform.position;
     }
 
     public void Simulate(float h)
@@ -55,6 +64,28 @@ public class Bunny : MonoBehaviour
         // 1. Si hay un depredador cerca -> huir
         if (PredatorInRange())
         {
+            Debug.Log($"Bunny {name} DETECTÓ AL ZORRO");
+
+            currentState = BunnyState.Fleeing;
+
+            // NUEVO: Guarda la posición del depredador que detectó directamente
+            fleeFromPosition = GetNearestPredatorPosition();
+
+            // NUEVO: Si detecta un depredador, avisa a los conejos cercanos
+            if (!receivedFleeAlert)
+            {
+                AlertNearbyBunnies(fleeFromPosition);
+            }
+
+            return;
+        }
+
+        // NUEVO: Si recibió una alerta de otro conejo, mantiene el estado de huida
+        // aunque el depredador esté fuera de su propio rango de visión
+        if (receivedFleeAlert)
+        {
+            Debug.Log($"Bunny {name} RECIBIÓ UNA ALERTA");
+
             currentState = BunnyState.Fleeing;
             return;
         }
@@ -146,12 +177,26 @@ public class Bunny : MonoBehaviour
 
     void Flee()
     {
+        Debug.Log($"Bunny {name} ESTÁ HUYENDO");
+
+        // NUEVO: Si ve al depredador usa su posición; si recibió una alerta,
+        // utiliza la posición del depredador que le comunicó el otro conejo
+        Vector3 predatorPosition;
+
+        if (PredatorInRange())
+        {
+            predatorPosition = GetNearestPredatorPosition();
+        }
+        else
+        {
+            predatorPosition = fleeFromPosition;
+        }
+
         // Elegir dirección contraria al depredador
-        Vector3 fleeDir = (transform.position - GetNearestPredatorPosition()).normalized;
+        Vector3 fleeDir = (transform.position - predatorPosition).normalized;
         destination = transform.position + fleeDir * visionRange;
 
-        // Después de huir vuelve a explorar
-        currentState = BunnyState.Exploring;
+
 
         RaycastHit2D hit = Physics2D.Raycast(transform.position, fleeDir, visionRange, LayerMask.GetMask("Obstacles"));
 
@@ -164,6 +209,9 @@ public class Bunny : MonoBehaviour
         {
             destination = transform.position + fleeDir * visionRange;
         }
+
+        // NUEVO: La alerta ya fue atendida
+        receivedFleeAlert = false;
     }
 
     void SelectNewDestination()
@@ -273,5 +321,40 @@ public class Bunny : MonoBehaviour
         }
 
         return nearest;
+    }
+
+    // NUEVO: Busca los conejos cercanos para comunicarles el peligro
+    void AlertNearbyBunnies(Vector3 predatorPosition)
+    {
+        Collider2D[] nearbyObjects = Physics2D.OverlapCircleAll(
+            transform.position,
+            visionRange
+        );
+
+        foreach (Collider2D obj in nearbyObjects)
+        {
+            Bunny otherBunny = obj.GetComponent<Bunny>();
+
+            if (otherBunny != null && otherBunny != this)
+            {
+                // NUEVO: Los conejos cercanos reciben la alerta y huyen
+                otherBunny.fleeFromPosition = predatorPosition;
+
+                Debug.Log($"Bunny {name} AVISÓ A Bunny {otherBunny.name}: ¡ZORRO!");
+
+                otherBunny.StartFleeing();
+            }
+        }
+    }
+
+    // NUEVO: Permite que otro conejo le comunique que debe huir
+    public void StartFleeing()
+    {
+        currentState = BunnyState.Fleeing;
+
+        // NUEVO: Marca que la huida fue provocada por la comunicación
+        receivedFleeAlert = true;
+
+        Debug.Log($"Bunny {name} RECIBIÓ LA ALERTA Y VA A HUIR");
     }
 }
