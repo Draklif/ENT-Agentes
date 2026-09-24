@@ -14,6 +14,6 @@ public class BunnyAge : MonoBehaviour
 
     void Update()
     {
-        bunny.speed = Mathf.Lerp(baseSpeed, baseSpeed * minSpeed, bunny.age / bunny.maxAge);
+        bunny.speed = Mathf.Lerp(baseSpeed, baseSpeed * minSpeed, bunny.age / bunny.maxAge); //la ia me ayudo a sacar esta operancion 
     }
 }
