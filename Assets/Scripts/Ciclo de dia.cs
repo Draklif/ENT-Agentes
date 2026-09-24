@@ -5,8 +5,8 @@ public class Ciclodedia : MonoBehaviour
   
     public float dayLength = 20f; // valor del dia
     public SpriteRenderer overlay; // sprite para colocar el color
-    public Color dayColor = new Color(0, 0, 0, 0);
-    public Color nightColor = new Color(0, 0, 0, 0);
+    public Color dayColor = new Color(195, 133, 6, 143);
+    public Color nightColor = new Color(0, 0, 38, 153);
     public bool esDia;
 
     private float time;
