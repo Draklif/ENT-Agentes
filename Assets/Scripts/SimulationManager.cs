@@ -1,56 +1,92 @@
 using System.Collections.Generic;
-using NUnit.Framework;
 using UnityEngine;
 
 public class SimulationManager : MonoBehaviour
 {
+    [Header("Simulation Settings")]
+    [Min(0.01f)]
     public float secondsPerIteration = 1.0f;
+
     private float time = 0f;
 
-    public List<Bunny> bunnies = new List<Bunny>();
-    public List<Predator> predators = new List<Predator>();
-    public FoodSpawner foodSpawner;
+    private List<Bunny> bunnies = new List<Bunny>();
+    private List<Predator> predators = new List<Predator>();
 
-    void Start()
+    private FoodSpawner foodSpawner;
+    private DroughtEvent droughtEvent;
+    private BunnyAgility[] bunnyAgilities;
+
+    private void Start()
     {
-        Bunny[] foundBunnies = FindObjectsByType<Bunny>(FindObjectsSortMode.InstanceID);
+        Bunny[] foundBunnies =
+            FindObjectsByType<Bunny>(FindObjectsSortMode.InstanceID);
+
         bunnies = new List<Bunny>(foundBunnies);
 
-        Predator[] foundPredators = FindObjectsByType<Predator>(FindObjectsSortMode.InstanceID);
+        Predator[] foundPredators =
+            FindObjectsByType<Predator>(FindObjectsSortMode.InstanceID);
+
         predators = new List<Predator>(foundPredators);
 
         foodSpawner = FindFirstObjectByType<FoodSpawner>();
+
+        droughtEvent = FindFirstObjectByType<DroughtEvent>();
+
+        bunnyAgilities =
+            FindObjectsByType<BunnyAgility>(FindObjectsSortMode.InstanceID);
     }
 
-    void Update()
+    private void Update()
     {
         time += Time.deltaTime;
 
-        if (time >= secondsPerIteration )
+        if (time >= secondsPerIteration)
         {
             time = 0f;
+
             Simulate();
         }
     }
 
-    void Simulate()
+    private void Simulate()
     {
-        foreach (Bunny b in bunnies)
+        // Simular conejos
+        foreach (Bunny bunny in bunnies)
         {
-            if (b != null && b.isAlive)
+            if (bunny != null && bunny.isAlive)
             {
-                b.Simulate(secondsPerIteration);
+                bunny.Simulate(secondsPerIteration);
             }
         }
 
-        foreach (Predator p in predators)
+        // Simular agilidad de los conejos
+        foreach (BunnyAgility agility in bunnyAgilities)
         {
-            if (p != null && p.isAlive)
+            if (agility != null)
             {
-               p .Simulate(secondsPerIteration);
+                agility.Simulate(secondsPerIteration);
             }
         }
 
-        if (foodSpawner != null) foodSpawner.Simulate(secondsPerIteration);
+        // Simular depredadores
+        foreach (Predator predator in predators)
+        {
+            if (predator != null && predator.isAlive)
+            {
+                predator.Simulate(secondsPerIteration);
+            }
+        }
+
+        // Simular generación de comida
+        if (foodSpawner != null)
+        {
+            foodSpawner.Simulate(secondsPerIteration);
+        }
+
+        // Simular evento de sequía
+        if (droughtEvent != null)
+        {
+            droughtEvent.Simulate(secondsPerIteration);
+        }
     }
 }

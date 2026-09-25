@@ -30,7 +30,7 @@ public class BunnyAgility : MonoBehaviour
         foxLayerMask = LayerMask.GetMask("Foxes");
     }
 
-    private void Update()
+    public void Simulate(float deltaTime)
     {
         if (bunny == null || !bunny.isAlive)
             return;
@@ -53,7 +53,7 @@ public class BunnyAgility : MonoBehaviour
 
         if (IsAgilityActive)
         {
-            remainingTime -= Time.deltaTime;
+            remainingTime -= deltaTime;
 
             if (remainingTime <= 0f)
             {

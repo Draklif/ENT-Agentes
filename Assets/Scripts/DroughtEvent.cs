@@ -24,12 +24,12 @@ public class DroughtEvent : MonoBehaviour
         originalMaxFood = foodSpawner.maxFood;
     }
 
-    private void Update()
+    public void Simulate(float deltaTime)
     {
         if (droughtFinished)
             return;
 
-        timer += Time.deltaTime;
+        timer += deltaTime;
 
         // Esperar hasta que llegue el momento de iniciar la sequía
         if (!IsDroughtActive && timer >= timeBeforeDrought)
