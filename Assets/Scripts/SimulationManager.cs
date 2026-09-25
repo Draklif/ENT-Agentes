@@ -20,6 +20,7 @@ public class SimulationManager : MonoBehaviour
         predators = new List<Predator>(foundPredators);
 
         foodSpawner = FindFirstObjectByType<FoodSpawner>();
+
     }
 
     void Update()
@@ -52,5 +53,6 @@ public class SimulationManager : MonoBehaviour
         }
 
         if (foodSpawner != null) foodSpawner.Simulate(secondsPerIteration);
+
     }
 }
