@@ -22,17 +22,24 @@ public class Bunny : MonoBehaviour
     [Header("Mutation")]
     public GameObject bunnyPrefab;
 
+    [Header("Reproduction Settings")]
+    public float minimumReproductionAge = 5f; // Edad mínima para reproducirse
+    public float reproductionRange = 1f; // Distancia necesaria entre los conejos
+    public float reproductionCooldown = 10f; // Tiempo entre reproducciones
+    public float reproductionEnergyCost = 2f; // Energía utilizada al reproducirse
+
     private Vector3 destination;
     private float h;
 
     private float sleepTargetEnergy;
+    private float reproductionTimer = 0f;
 
     private void Start()
     {
         destination = transform.position;
 
         //PRUEBA TEMPORAL
-       // Bunny[] bunnies = FindObjectsByType<Bunny>(FindObjectsSortMode.None);
+        // Bunny[] bunnies = FindObjectsByType<Bunny>(FindObjectsSortMode.None);
 
         //foreach (var b in bunnies)
         //{
@@ -49,6 +56,7 @@ public class Bunny : MonoBehaviour
         if (!isAlive) return;
 
         this.h = h;
+        reproductionTimer += h;
 
         EvaluateState();
 
@@ -78,6 +86,7 @@ public class Bunny : MonoBehaviour
         Move();
         Age();
         CheckState();
+        TryReproduce();
     }
 
     void EvaluateState()
@@ -312,11 +321,76 @@ public class Bunny : MonoBehaviour
         }
     }
 
+    void TryReproduce()
+    {
+        if (!isAlive || bunnyPrefab == null)
+            return;
+
+        if (age < minimumReproductionAge)
+            return;
+
+        if (reproductionTimer < reproductionCooldown)
+            return;
+
+        if (energy <= reproductionEnergyCost)
+            return;
+
+        Bunny[] bunnies = FindObjectsByType<Bunny>(
+            FindObjectsSortMode.None
+        );
+
+        foreach (Bunny partner in bunnies)
+        {
+            if (partner == this || !partner.isAlive)
+                continue;
+
+            if (partner.age < minimumReproductionAge)
+                continue;
+
+            if (partner.reproductionTimer < partner.reproductionCooldown)
+                continue;
+
+            if (partner.energy <= partner.reproductionEnergyCost)
+                continue;
+
+            float distance = Vector2.Distance(
+                transform.position,
+                partner.transform.position
+            );
+
+            if (distance <= reproductionRange)
+            {
+                CreateChildWith(partner);
+
+                energy -= reproductionEnergyCost;
+                partner.energy -= partner.reproductionEnergyCost;
+
+                reproductionTimer = 0f;
+                partner.reproductionTimer = 0f;
+
+                break;
+            }
+        }
+    }
+
     //Mutacion
     public void CreateChildWith(Bunny partner)
     {
-        GameObject childObj = Instantiate(bunnyPrefab, transform.position, Quaternion.identity);
+        GameObject childObj = Instantiate(
+            bunnyPrefab,
+            transform.position,
+            Quaternion.identity
+        );
+
         Bunny child = childObj.GetComponent<Bunny>();
+
+        if (child == null)
+        {
+            Destroy(childObj);
+            return;
+        }
+
+        child.bunnyPrefab = bunnyPrefab;
 
         BunnyMutation.ApplyMutation(child, this, partner);
 
@@ -371,12 +445,12 @@ public class Bunny : MonoBehaviour
         return pos;
     }
 
-    Food FindNearestFood() // Busca la comida m�s cercana dentro del rango de visi�n, considerando obst�culos
+    Food FindNearestFood() // Busca la comida más cercana dentro del rango de visión, considerando obstáculos
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Food"));  // Busca todos los collider dentro del rango de visi�n
-        Debug.Log($"Bunny {name} encontr� {hits.Length} colliders en su rango");
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Food"));  // Busca todos los collider dentro del rango de visión
+        Debug.Log($"Bunny {name} encontró {hits.Length} colliders en su rango");
         Food nearest = null; // Inicializa la variable
-        float minDist = Mathf.Infinity; // Inicializa la distancia m�nima a infinito
+        float minDist = Mathf.Infinity; // Inicializa la distancia mínima a infinito
 
         foreach (Collider2D hit in hits) // Se ejecuta para cada collider encontrado
         {
@@ -402,7 +476,7 @@ public class Bunny : MonoBehaviour
                 nearest = food;
             }
         }
-        return nearest; //Retornando la comida m�s cercana que el conejo puede ver, si no hay niguno entonces manda un null
+        return nearest; //Retornando la comida más cercana que el conejo puede ver, si no hay ninguno entonces manda un null
 
     }
 }

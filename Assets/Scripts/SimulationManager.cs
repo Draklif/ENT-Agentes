@@ -23,7 +23,7 @@ public class SimulationManager : MonoBehaviour
     void Update()
     {
         time += Time.deltaTime;
-        if (time >= secondsPerIteration )
+        if (time >= secondsPerIteration)
         {
             time = 0f;
             Simulate();
@@ -33,6 +33,10 @@ public class SimulationManager : MonoBehaviour
     void Simulate()
     {
         if (spawner != null) spawner.Simulate(secondsPerIteration);
+
+        // Actualiza la lista para incluir los conejos que nacieron durante la simulación
+        Bunny[] foundBunnies = FindObjectsByType<Bunny>(FindObjectsSortMode.InstanceID);
+        bunnies = new List<Bunny>(foundBunnies);
 
         foreach (Bunny b in bunnies)
         {
@@ -46,7 +50,7 @@ public class SimulationManager : MonoBehaviour
         {
             if (p != null && p.isAlive)
             {
-               p .Simulate(secondsPerIteration);
+                p.Simulate(secondsPerIteration);
             }
         }
     }
