@@ -36,6 +36,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 180}
 --- !u!212 &4280179364882799912
 SpriteRenderer:
+  serializedVersion: 3
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -81,6 +82,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 75f5f34dc1b5347e0b8351032682f224, type: 3}
   m_Color: {r: 1, g: 0.4725827, b: 0, a: 1}
   m_FlipX: 0
@@ -90,8 +92,8 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+  m_BlendShapeWeights: []
 --- !u!114 &-7062618976592757993
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -104,12 +106,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dc24950105011843a3f23c4ef2a1df1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Predator
-  energy: 10000
+  energy: 100
   age: 0
   maxAge: 60
-  isAlive: 1
   speed: 1.5
   visionRange: 15
+  isAlive: 1
   currentState: 0
 --- !u!60 &2478447337859204611
 PolygonCollider2D:
