@@ -3,11 +3,14 @@ using UnityEngine;
 public class Bunny : MonoBehaviour
 {
     [Header("Bunny Settings")]
-    public float energy = 10;
-    public float age = 0;
-    public float maxAge = 20;
-    public float speed = 1f;
-    public float visionRange = 5f;
+    [Tooltip("0 = Macho, 1 = Hembra")]
+    public int gender;
+    public float energy = 10f;
+    public float maxEnergy = 10f;
+    public float age = 0f;
+    public float maxAge = 25f;
+    public float speed = 1.5f;
+    public float visionRange = 6f;
 
     [Header("Bunny States")]
     public bool isAlive = true;
@@ -15,10 +18,47 @@ public class Bunny : MonoBehaviour
 
     private Vector3 destination;
     private float h;
+    private BunnyReproduction reproComponent;
+
+    private void Awake()
+    {
+        reproComponent = GetComponent<BunnyReproduction>();
+
+        // Asigna 0 (Macho) o 1 (Hembra) aleatoriamente al iniciar
+        gender = (Random.value >= 0.5f) ? 0 : 1;
+    }
 
     private void Start()
     {
         destination = transform.position;
+
+        SimulationManager manager = FindAnyObjectByType<SimulationManager>();
+        if (manager != null)
+        {
+            manager.RegisterBunny(this);
+        }
+    }
+
+    private void Update()
+    {
+        if (!isAlive) return;
+
+        // Si estÃ¡ buscando reproducirse, sigue a la pareja en tiempo real
+        if (currentState == BunnyState.Reproduccion && reproComponent != null)
+        {
+            BunnyReproduction partner = reproComponent.FindNearestPartner(visionRange);
+            if (partner != null)
+            {
+                destination = partner.transform.position;
+            }
+        }
+
+        // Movimiento fluido continuo
+        transform.position = Vector3.MoveTowards(
+            transform.position,
+            destination,
+            speed * Time.deltaTime
+        );
     }
 
     public void Simulate(float h)
@@ -27,8 +67,15 @@ public class Bunny : MonoBehaviour
 
         this.h = h;
 
+        if (reproComponent != null)
+        {
+            reproComponent.SimulateCooldown(h);
+        }
+
+        // 1. EvalÃºa el estado basÃ¡ndose en prioridades estrictas
         EvaluateState();
 
+        // 2. Ejecuta la acciÃ³n del estado seleccionado
         switch (currentState)
         {
             case BunnyState.Exploring:
@@ -43,36 +90,27 @@ public class Bunny : MonoBehaviour
             case BunnyState.Fleeing:
                 Flee();
                 break;
+            case BunnyState.Reproduccion:
+                Reproduce();
+                break;
         }
 
-        Move();
+        energy -= 0.2f * h;
         Age();
         CheckState();
     }
 
     void EvaluateState()
     {
-        // 1. Si hay un depredador cerca -> huir
+        // 1. PRIORIDAD MÃXIMA: Depredador cerca -> Huir
         if (PredatorInRange())
         {
             currentState = BunnyState.Fleeing;
             return;
         }
 
-        // 2. Si la energía está baja -> buscar comida
-        if (energy < 500f)
-        {
-            Food nearestFood = FindNearestFood();
-            if (nearestFood != null)
-            {
-                currentState = BunnyState.SearchingFood;
-                destination = nearestFood.transform.position;
-                return;
-            }
-        }
-
-        // 3. Si está encima de la comida -> comer
-        Collider2D foodHit = Physics2D.OverlapCircle(transform.position, 0.2f, LayerMask.GetMask("Food"));
+        // 2. SEGUNDA PRIORIDAD: Si ya pisÃ³ comida -> Comer
+        Collider2D foodHit = Physics2D.OverlapCircle(transform.position, 0.3f, LayerMask.GetMask("Food"));
         if (foodHit != null)
         {
             Food food = foodHit.GetComponent<Food>();
@@ -83,26 +121,49 @@ public class Bunny : MonoBehaviour
             }
         }
 
-        // 4. Si no pasa nada -> explorar
-        if (currentState == BunnyState.Eating == false)
+        // 3. TERCERA PRIORIDAD: Hambre CrÃ­tica (< 5.0) -> Buscar Comida
+        if (energy < 5.0f)
         {
-            currentState = BunnyState.Exploring;
+            Food nearestFood = FindNearestFood();
+            if (nearestFood != null)
+            {
+                currentState = BunnyState.SearchingFood;
+                destination = nearestFood.transform.position;
+                return;
+            }
         }
+
+        // 4. CUARTA PRIORIDAD: ReproducciÃ³n (Si tiene energÃ­a suficiente y hay pareja lista)
+        if (reproComponent != null && reproComponent.CanReproduce())
+        {
+            BunnyReproduction partner = reproComponent.FindNearestPartner(visionRange);
+            if (partner != null)
+            {
+                currentState = BunnyState.Reproduccion;
+                destination = partner.transform.position;
+                return;
+            }
+        }
+
+        // 5. QUINTA PRIORIDAD: Comida Oportunista (Si no estÃ¡ completamente lleno y ve comida)
+        if (energy < maxEnergy - 1.0f)
+        {
+            Food nearestFood = FindNearestFood();
+            if (nearestFood != null)
+            {
+                currentState = BunnyState.SearchingFood;
+                destination = nearestFood.transform.position;
+                return;
+            }
+        }
+
+        // 6. ÃšLTIMA PRIORIDAD: Explorar libremente
+        currentState = BunnyState.Exploring;
     }
 
     void Explore()
     {
-        // Si hay comida a la vista, cambiar de estado
-        Food nearestFood = FindNearestFood();
-        if (nearestFood != null)
-        {
-            currentState = BunnyState.SearchingFood;
-            destination = nearestFood.transform.position;
-            return;
-        }
-
-        // Si ya llegó al destino, elegir uno nuevo
-        if (Vector3.Distance(transform.position, destination) < 0.1f)
+        if (Vector3.Distance(transform.position, destination) < 0.2f)
         {
             SelectNewDestination();
         }
@@ -113,15 +174,13 @@ public class Bunny : MonoBehaviour
         Food nearestFood = FindNearestFood();
         if (nearestFood == null)
         {
-            // Si no hay comida, volver a explorar
             currentState = BunnyState.Exploring;
             return;
         }
 
         destination = nearestFood.transform.position;
 
-        // Si está suficientemente cerca, pasar a comer
-        if (Vector3.Distance(transform.position, nearestFood.transform.position) < 0.2f)
+        if (Vector3.Distance(transform.position, nearestFood.transform.position) < 0.3f)
         {
             currentState = BunnyState.Eating;
         }
@@ -129,30 +188,23 @@ public class Bunny : MonoBehaviour
 
     void Eat()
     {
-        Collider2D foodHit = Physics2D.OverlapCircle(transform.position, 0.2f, LayerMask.GetMask("Food"));
+        Collider2D foodHit = Physics2D.OverlapCircle(transform.position, 0.3f, LayerMask.GetMask("Food"));
         if (foodHit != null)
         {
             Food food = foodHit.GetComponent<Food>();
             if (food != null)
             {
-                energy += food.nutrition;
+                energy = Mathf.Min(maxEnergy, energy + food.nutrition);
                 Destroy(food.gameObject);
             }
         }
 
-        // Después de comer vuelve a explorar
         currentState = BunnyState.Exploring;
     }
 
     void Flee()
     {
-        // Elegir dirección contraria al depredador
         Vector3 fleeDir = (transform.position - GetNearestPredatorPosition()).normalized;
-        destination = transform.position + fleeDir * visionRange;
-
-        // Después de huir vuelve a explorar
-        currentState = BunnyState.Exploring;
-
         RaycastHit2D hit = Physics2D.Raycast(transform.position, fleeDir, visionRange, LayerMask.GetMask("Obstacles"));
 
         if (hit.collider != null)
@@ -166,6 +218,40 @@ public class Bunny : MonoBehaviour
         }
     }
 
+    void Reproduce()
+    {
+        if (reproComponent == null) return;
+
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 0.8f, LayerMask.GetMask("Bunnies"));
+
+        foreach (Collider2D hit in hits)
+        {
+            if (hit.gameObject == this.gameObject) continue;
+
+            BunnyReproduction partnerRepro = hit.GetComponent<BunnyReproduction>();
+
+            if (partnerRepro != null && partnerRepro.gender != reproComponent.gender)
+            {
+                if (reproComponent.TryReproduceWith(partnerRepro))
+                {
+                    SelectNewDestination();
+                    currentState = BunnyState.Exploring;
+                    return;
+                }
+            }
+        }
+
+        BunnyReproduction targetPartner = reproComponent.FindNearestPartner(visionRange);
+        if (targetPartner != null)
+        {
+            destination = targetPartner.transform.position;
+        }
+        else
+        {
+            currentState = BunnyState.Exploring;
+        }
+    }
+
     void SelectNewDestination()
     {
         Vector3 direction = new Vector3(
@@ -175,7 +261,6 @@ public class Bunny : MonoBehaviour
         );
 
         Vector3 targetPoint = transform.position + direction;
-
         RaycastHit2D hit = Physics2D.Raycast(transform.position, direction.normalized, visionRange, LayerMask.GetMask("Obstacles"));
 
         if (hit.collider != null)
@@ -187,17 +272,6 @@ public class Bunny : MonoBehaviour
         {
             destination = targetPoint;
         }
-    }
-
-    void Move()
-    {
-        transform.position = Vector3.MoveTowards(
-            transform.position,
-            destination,
-            speed * h
-        );
-
-        energy -= speed * h;
     }
 
     void Age()
@@ -254,7 +328,6 @@ public class Bunny : MonoBehaviour
     Food FindNearestFood()
     {
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Food"));
-        Debug.Log($"Bunny {name} encontró {hits.Length} colliders en su rango");
         Food nearest = null;
         float minDist = Mathf.Infinity;
 
