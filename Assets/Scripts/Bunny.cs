@@ -3,9 +3,9 @@ using UnityEngine;
 public class Bunny : MonoBehaviour
 {
     [Header("Bunny Settings")]
-    public float energy = 10;
+    public float energy = 100;
     public float age = 0;
-    public float maxAge = 20;
+    public float maxAge = 100;
     public float speed = 1f;
     public float visionRange = 5f;
 
@@ -16,12 +16,12 @@ public class Bunny : MonoBehaviour
     private float h;
 
     [Header("Bunny Resting")]
-    public float restDescanso = 3f; // en este limite de energia es la que el conejo empieza a descansar
-    public float restRecuperado = 7f; // apartir de 7, el conejo empieza a buscar comida
-    public float restRecuperarRate = 2f; // la cantidad de energia que recupera al descansar por segundo
+    public float restDescanso = 30f; // en este limite de energia es la que el conejo empieza a descansar
+    public float restRecuperado = 70f; // apartir de 7, el conejo empieza a buscar comida
+    public float restRecuperarRate = 20f; // la cantidad de energia que recupera al descansar por segundo
 
     [Header("Bunny Feeding")]
-    public float feedBuscando = 8f; // cuando el conejo llegue a 8 de energia, empieza a buscar comida
+    public float feedBuscando = 80f; // cuando el conejo llegue a 8 de energia, empieza a buscar comida
 
     private void Start()
     {
