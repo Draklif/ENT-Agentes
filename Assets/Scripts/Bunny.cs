@@ -32,7 +32,7 @@ public class Bunny : MonoBehaviour
         destination = transform.position;
 
         //PRUEBA TEMPORAL
-       // Bunny[] bunnies = FindObjectsByType<Bunny>(FindObjectsSortMode.None);
+        // Bunny[] bunnies = FindObjectsByType<Bunny>(FindObjectsSortMode.None);
 
         //foreach (var b in bunnies)
         //{
@@ -124,7 +124,7 @@ public class Bunny : MonoBehaviour
         if (foodHit != null)
         {
             Food food = foodHit.GetComponent<Food>();
-            if (food != null)
+            if (food != null && !food.isRotten)
             {
                 currentState = BunnyState.Eating;
                 return;
@@ -206,7 +206,7 @@ public class Bunny : MonoBehaviour
         if (foodHit != null)
         {
             Food food = foodHit.GetComponent<Food>();
-            if (food != null)
+            if (food != null && !food.isRotten)
             {
                 energy += food.nutrition;
                 energy = Mathf.Min(energy);
@@ -371,17 +371,17 @@ public class Bunny : MonoBehaviour
         return pos;
     }
 
-    Food FindNearestFood() // Busca la comida m�s cercana dentro del rango de visi�n, considerando obst�culos
+    Food FindNearestFood() // Busca la comida más cercana dentro del rango de visión, considerando obstáculos
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Food"));  // Busca todos los collider dentro del rango de visi�n
-        Debug.Log($"Bunny {name} encontr� {hits.Length} colliders en su rango");
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Food"));  // Busca todos los collider dentro del rango de visión
+        Debug.Log($"Bunny {name} encontró {hits.Length} colliders en su rango");
         Food nearest = null; // Inicializa la variable
-        float minDist = Mathf.Infinity; // Inicializa la distancia m�nima a infinito
+        float minDist = Mathf.Infinity; // Inicializa la distancia mínima a infinito
 
         foreach (Collider2D hit in hits) // Se ejecuta para cada collider encontrado
         {
             Food food = hit.GetComponent<Food>();
-            if (food == null) continue;
+            if (food == null || food.isRotten) continue;
 
             Vector3 direction = food.transform.position - transform.position;
             float dist = direction.magnitude;
@@ -402,7 +402,7 @@ public class Bunny : MonoBehaviour
                 nearest = food;
             }
         }
-        return nearest; //Retornando la comida m�s cercana que el conejo puede ver, si no hay niguno entonces manda un null
+        return nearest; //Retornando la comida más cercana que el conejo puede ver, si no hay niguno entonces manda un null
 
     }
 }

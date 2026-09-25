@@ -69,11 +69,11 @@ public class FoodSpawner : MonoBehaviour
             time = 0f;
             if (CountFood() < maxFood)
 
-            if (CountFood() < maxFood) // Si hay menos de 50 comidas...
-            {
-                SpawnFoodDependZone(); // Te dirigue al método de generador de comida segun la zona
-                //SpawnFood();
-            }
+                if (CountFood() < maxFood) // Si hay menos de 50 comidas...
+                {
+                    SpawnFoodDependZone(); // Te dirigue al método de generador de comida segun la zona
+                                           //SpawnFood();
+                }
         }
     }
 
@@ -99,14 +99,14 @@ public class FoodSpawner : MonoBehaviour
     void SpawnFoodDependZone() // GENERADOR DE COMIDA SEGÚN LA ZONA
     {
         Vector2 spawnPos = new Vector2( // Crear una variable para guardar la posición
-            // Elige un número al azar para la posición de la comida
+                                        // Elige un número al azar para la posición de la comida
             Random.Range(-areaSize.x / 2f, areaSize.x / 2f),
             Random.Range(-areaSize.y / 2f, areaSize.y / 2f)
         );
 
         spawnPos += (Vector2)transform.position; // Suma la posición del generador de comida a la posición aleatoria
 
-        Instantiate(foodPrefab, spawnPos, Quaternion.identity); 
+        Instantiate(foodPrefab, spawnPos, Quaternion.identity);
         GetZoneAtPosition(spawnPos); // Se dirigue al método para detectar la zona
 
         float probability = normalZoneChance; // Mientras tanto, por defecto será determinada como zona normal (Está en el 10%)
@@ -119,7 +119,7 @@ public class FoodSpawner : MonoBehaviour
             if (foundZone.zonetype == Zone.ZoneType.Fertile)
             {
                 probability = fertileZoneChance; // Entonces es señalada como probabilidad del 70%
-            } 
+            }
             else if (foundZone.zonetype == Zone.ZoneType.Arid)// Si no, entonces Si la zona encontrada está señalada como arida...
             {
                 probability = aridZoneChance; // Entonces es señalada como probabilidad del 20%
@@ -127,7 +127,7 @@ public class FoodSpawner : MonoBehaviour
         }
 
         if (Random.value <= probability) // Para saber si esa probabilidad se va a cumplir, se realiza este método para determinar si en esa zona aparecerá comida o no
-        { 
+        {
             Instantiate(foodPrefab, spawnPos, Quaternion.identity); // Si el valor da dentro del porcentaje, entonces aparecerá comida
         } //Si no, no aparece nada en este intento
     }
@@ -150,7 +150,22 @@ public class FoodSpawner : MonoBehaviour
 
     int CountFood()
     {
-        return FindObjectsByType<Food>(FindObjectsSortMode.InstanceID).Length;
+        Food[] allFood = FindObjectsByType<Food>(
+            FindObjectsSortMode.InstanceID
+        );
+
+        int freshFoodCount = 0;
+
+        foreach (Food food in allFood)
+        {
+            // Solo cuenta la comida que todavía está fresca.
+            if (!food.isRotten)
+            {
+                freshFoodCount++;
+            }
+        }
+
+        return freshFoodCount;
     }
 
     private void OnDrawGizmosSelected() //Acá hace lo mismo que tiene el zorro y el conejo para saber el área en el que puede aparecer la comida
@@ -159,3 +174,4 @@ public class FoodSpawner : MonoBehaviour
         Gizmos.DrawWireCube(transform.position, new Vector3(areaSize.x, areaSize.y, 1));
     }
 }
+
