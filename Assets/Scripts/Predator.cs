@@ -12,6 +12,12 @@ public class Predator : MonoBehaviour
     public float speed = 1f;
     public float visionRange = 5f;
 
+
+
+    [Header("Terrain Friction")]
+    public float actualSpeed;
+    private float speedMultiplier = 1f;
+
     [Header("Resting - Descanso en madrigueras")]
     // Si no se asigna una madriguera (den) en el Inspector, el depredador
     // descansarÃ¡ en el mismo punto donde se encuentre. La lÃ³gica vive en
@@ -43,9 +49,11 @@ public class Predator : MonoBehaviour
     private float h;
     private Territory territory;
 
+
     private void Start()
     {
         destination = transform.position;
+        actualSpeed = speed;
 
         // Se instancian aquÃ­ (y no como campos inicializados en la
         // declaraciÃ³n) porque dependen de valores configurados en el
@@ -202,12 +210,15 @@ public class Predator : MonoBehaviour
         }
     }
 
+
     void Move()
     {
+        actualSpeed = speed * speedMultiplier;
+
         transform.position = Vector3.MoveTowards(
             transform.position,
             destination,
-            speed * h
+            actualSpeed * h
         );
 
         // Mientras descansa en la madriguera no gasta energÃ­a por
@@ -277,6 +288,27 @@ public class Predator : MonoBehaviour
 
         return nearest;
     }
+
+
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        TerrainFriction terrain = other.GetComponent<TerrainFriction>();
+
+        if (terrain != null)
+        {
+            speedMultiplier = terrain.speedMultiplier;
+
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        TerrainFriction terrain = other.GetComponent<TerrainFriction>();
+
+        if (terrain != null)
+        {
+            speedMultiplier = 1f;
 
     // FEATURE: Descanso en madrigueras -> delega en DescansoDepredador
     void Rest()

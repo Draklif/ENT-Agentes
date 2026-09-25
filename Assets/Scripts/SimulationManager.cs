@@ -53,7 +53,7 @@ public class SimulationManager : MonoBehaviour
                 b.Simulate(secondsPerIteration);
             }
         }
-
+       
         foreach (Predator p in predators)
         {
             if (p != null && p.isAlive)
