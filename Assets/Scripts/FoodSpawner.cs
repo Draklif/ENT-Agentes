@@ -41,7 +41,22 @@ public class FoodSpawner : MonoBehaviour
 
     int CountFood()
     {
-        return FindObjectsByType<Food>(FindObjectsSortMode.InstanceID).Length;
+        Food[] allFood = FindObjectsByType<Food>(
+            FindObjectsSortMode.InstanceID
+        );
+
+        int freshFoodCount = 0;
+
+        foreach (Food food in allFood)
+        {
+            //Solo cuenta la comida que todavía está fresca
+            if (!food.isRotten)
+            {
+                freshFoodCount++;
+            }
+        }
+
+        return freshFoodCount;
     }
 
     private void OnDrawGizmosSelected()

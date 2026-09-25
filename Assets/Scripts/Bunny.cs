@@ -13,8 +13,15 @@ public class Bunny : MonoBehaviour
     public bool isAlive = true;
     public BunnyState currentState = BunnyState.Exploring;
 
+    [Header("Reproduction Settings")]
+    public float minimumReproductionAge = 5f;
+    public float reproductionRange = 2f;
+    public float reproductionCooldown = 5f;
+    public float reproductionEnergyCost = 2f;
+
     private Vector3 destination;
     private float h;
+    private float reproductionTimer = 0f;
 
     private void Start()
     {
@@ -26,6 +33,11 @@ public class Bunny : MonoBehaviour
         if (!isAlive) return;
 
         this.h = h;
+
+        if (reproductionTimer > 0f)
+        {
+            reproductionTimer -= h;
+        }
 
         EvaluateState();
 
@@ -47,6 +59,7 @@ public class Bunny : MonoBehaviour
 
         Move();
         Age();
+        TryReproduce();
         CheckState();
     }
 
@@ -203,6 +216,85 @@ public class Bunny : MonoBehaviour
     void Age()
     {
         age += h;
+    }
+
+    void TryReproduce()
+    {
+        //Verifica si el conejo tiene la edad y energía necesarias
+        if (age < minimumReproductionAge ||
+            energy <= reproductionEnergyCost ||
+            reproductionTimer > 0f)
+        {
+            return;
+        }
+
+        Bunny[] allBunnies = FindObjectsByType<Bunny>(
+            FindObjectsSortMode.InstanceID
+        );
+
+        foreach (Bunny otherBunny in allBunnies)
+        {
+            //Evita reproducirse consigo mismo
+            if (otherBunny == this)
+            {
+                continue;
+            }
+
+            //Verifica que el otro conejo pueda reproducirse
+            if (!otherBunny.isAlive ||
+                otherBunny.age < otherBunny.minimumReproductionAge ||
+                otherBunny.energy <= otherBunny.reproductionEnergyCost ||
+                otherBunny.reproductionTimer > 0f)
+            {
+                continue;
+            }
+
+            float distance = Vector3.Distance(
+                transform.position,
+                otherBunny.transform.position
+            );
+
+            //Verifica que los conejos estén suficientemente cerca
+            if (distance > reproductionRange)
+            {
+                continue;
+            }
+
+            Vector3 childPosition =
+                (transform.position + otherBunny.transform.position) / 2f;
+
+            GameObject childObject = Instantiate(
+                gameObject,
+                childPosition,
+                Quaternion.identity
+            );
+
+            Bunny child = childObject.GetComponent<Bunny>();
+
+            if (child != null)
+            {
+                child.age = 0f;
+                child.isAlive = true;
+                child.currentState = BunnyState.Exploring;
+                child.destination = child.transform.position;
+
+                //Aplica las características y mutaciones de los padres
+                BunnyMutation.ApplyMutation(child, this, otherBunny);
+
+                child.reproductionTimer = child.reproductionCooldown;
+            }
+
+            //Los padres gastan energía al reproducirse
+            energy -= reproductionEnergyCost;
+            otherBunny.energy -= otherBunny.reproductionEnergyCost;
+
+            //Activa el tiempo de espera de ambos padres
+            reproductionTimer = reproductionCooldown;
+            otherBunny.reproductionTimer =
+                otherBunny.reproductionCooldown;
+
+            return;
+        }
     }
 
     void CheckState()
