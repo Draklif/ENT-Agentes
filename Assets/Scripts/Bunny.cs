@@ -9,6 +9,15 @@ public class Bunny : MonoBehaviour
     public float speed = 1f;
     public float visionRange = 5f;
 
+
+    [Header("Terrain Friction")]
+    public float actualSpeed;
+    private float speedMultiplier = 1f;
+
+    [Header("Water")]
+    public bool canCrossWater = false;
+
+
     [Header("Bunny States")]
     public bool isAlive = true;
     public BunnyState currentState = BunnyState.Exploring;
@@ -20,6 +29,7 @@ public class Bunny : MonoBehaviour
     private void Start()
     {
         destination = transform.position;
+        actualSpeed = speed;
         alert = GetComponent<BunnyAlert>();
     }
 
@@ -73,7 +83,7 @@ public class Bunny : MonoBehaviour
             return;
         }
 
-        // 2. Si la energùa estù baja -> buscar comida
+        // 2. Si la energ¬ùa est¬ù baja -> buscar comida
         if (energy < 500f)
         {
             Food nearestFood = FindNearestFood();
@@ -85,7 +95,7 @@ public class Bunny : MonoBehaviour
             }
         }
 
-        // 3. Si estù encima de la comida -> comer
+        // 3. Si est¬ù encima de la comida -> comer
         Collider2D foodHit = Physics2D.OverlapCircle(transform.position, 0.2f, LayerMask.GetMask("Food"));
         if (foodHit != null)
         {
@@ -115,7 +125,7 @@ public class Bunny : MonoBehaviour
             return;
         }
 
-        // Si ya llegù al destino, elegir uno nuevo
+        // Si ya lleg¬ù al destino, elegir uno nuevo
         if (Vector3.Distance(transform.position, destination) < 0.1f)
         {
             SelectNewDestination();
@@ -134,7 +144,7 @@ public class Bunny : MonoBehaviour
 
         destination = nearestFood.transform.position;
 
-        // Si estù suficientemente cerca, pasar a comer
+        // Si est¬ù suficientemente cerca, pasar a comer
         if (Vector3.Distance(transform.position, nearestFood.transform.position) < 0.2f)
         {
             currentState = BunnyState.Eating;
@@ -154,13 +164,13 @@ public class Bunny : MonoBehaviour
             }
         }
 
-        // Despueùs de comer vuelve a explorar
+        // Despue¬ùs de comer vuelve a explorar
         currentState = BunnyState.Exploring;
     }
 
     void Flee()
     {
-        // Elegir direccioùn contraria al depredador
+        // Elegir direccio¬ùn contraria al depredador
         Vector3 predatorPos = GetNearestPredatorPosition();
         if (alert != null && alert.warned && predatorPos == transform.position)
         {
@@ -175,7 +185,7 @@ public class Bunny : MonoBehaviour
         Vector3 fleeDir = (transform.position - predatorPos).normalized;
         destination = transform.position + fleeDir * visionRange;
 
-        // Despueùs de huir vuelve a explorar
+        // Despue¬ùs de huir vuelve a explorar
         currentState = BunnyState.Exploring;
 
         RaycastHit2D hit = Physics2D.Raycast(transform.position, fleeDir, visionRange, LayerMask.GetMask("Obstacles"));
@@ -214,13 +224,33 @@ public class Bunny : MonoBehaviour
         }
     }
 
+
     void Move()
     {
-        transform.position = Vector3.MoveTowards(
+        actualSpeed = speed * speedMultiplier;
+
+        Vector3 nextPosition = Vector3.MoveTowards(
             transform.position,
             destination,
-            speed * h
+            actualSpeed * h
         );
+
+        Collider2D waterCollider = Physics2D.OverlapCircle(
+            nextPosition,
+            0.1f
+        );
+
+        if (waterCollider != null)
+        {
+            WaterBody water = waterCollider.GetComponent<WaterBody>();
+
+            if (water != null && !canCrossWater)
+            {
+                return;
+            }
+        }
+
+        transform.position = nextPosition;
 
         energy -= speed * h;
     }
@@ -279,7 +309,7 @@ public class Bunny : MonoBehaviour
     Food FindNearestFood()
     {
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Food"));
-        Debug.Log($"Bunny {name} encontrù {hits.Length} colliders en su rango");
+        Debug.Log($"Bunny {name} encontr¬ù {hits.Length} colliders en su rango");
         Food nearest = null;
         float minDist = Mathf.Infinity;
 
@@ -298,5 +328,31 @@ public class Bunny : MonoBehaviour
         }
 
         return nearest;
+    }
+
+
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+
+        TerrainFriction terrain = other.GetComponent<TerrainFriction>();
+
+        if (terrain != null)
+        {
+            speedMultiplier = terrain.speedMultiplier;
+
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+      
+        TerrainFriction terrain = other.GetComponent<TerrainFriction>();
+
+        if (terrain != null)
+        {
+            speedMultiplier = 1f;
+
+        }
     }
 }
