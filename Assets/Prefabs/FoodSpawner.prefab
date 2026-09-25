@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3868413411585423318}
   - component: {fileID: 7423225132313568019}
+  - component: {fileID: 2221139729483079456}
   m_Layer: 0
   m_Name: FoodSpawner
   m_TagString: Untagged
@@ -48,3 +49,17 @@ MonoBehaviour:
   spawnInterval: 2
   maxFood: 20
   areaSize: {x: 20, y: 20}
+--- !u!114 &2221139729483079456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1958683738666648899}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c23acd028b2e74f4892bb029a70f7e42, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DroughtEvent
+  timeBeforeDrought: 10
+  droughtDuration: 5
