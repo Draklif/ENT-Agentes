@@ -9,6 +9,23 @@ public class Predator : MonoBehaviour
     public float speed = 1f;
     public float visionRange = 5f;
 
+    // FEATURE: Envejecimiento de depredadores.
+    // El depredador pierde velocidad a medida que envejece (ver AgingCalculator).
+    [Header("Aging (Envejecimiento)")]
+    [Tooltip("Porcentaje de la vida (0 a 1) en el que empieza a perder velocidad. 0.5 = a mitad de su vida.")]
+    [Range(0f, 1f)] public float maturityRatio = 0.5f;
+
+    [Tooltip("Porcentaje minimo de velocidad que conserva al llegar a su edad maxima. 0.3 = 30%.")]
+    [Range(0.05f, 1f)] public float minSpeedFactor = 0.3f;
+
+    [Tooltip("Velocidad real actual (solo lectura, para ver el efecto en el Inspector).")]
+    public float currentSpeed;
+
+    // FEATURE Eventos climaticos: vision real segun el clima (ver WeatherSystem).
+    [Header("Weather (Clima)")]
+    [Tooltip("Vision real actual segun el clima (solo lectura, para ver el efecto en el Inspector).")]
+    public float currentVision;
+
     [Header("Predator States")]
     public bool isAlive = true;
     public PredatorState currentState = PredatorState.Exploring;
@@ -130,13 +147,20 @@ public class Predator : MonoBehaviour
 
     void Move()
     {
+        // FEATURE Envejecimiento: la velocidad real depende de la edad.
+        // AgingCalculator devuelve un factor entre minSpeedFactor y 1
+        // que se multiplica por la velocidad base.
+        currentSpeed = speed * AgingCalculator.GetSpeedFactor(age, maxAge, maturityRatio, minSpeedFactor);
+
         transform.position = Vector3.MoveTowards(
             transform.position,
             destination,
-            speed * h
+            currentSpeed * h
         );
 
-        energy -= speed * h;
+        // El gasto de energia usa la velocidad real:
+        // un depredador viejo y lento gasta menos energia al moverse.
+        energy -= currentSpeed * h;
     }
 
     void Age()
@@ -153,10 +177,21 @@ public class Predator : MonoBehaviour
         }
     }
 
+    // FEATURE Eventos climaticos:
+    // Devuelve el rango de vision real = vision base x multiplicador del clima.
+    // Despejado = x1, Lluvia = x0.6, Tormenta = x0.3 (configurable en WeatherSystem).
+    // Si no existe WeatherSystem, el multiplicador es 1 y todo funciona como antes.
+    float GetEffectiveVision()
+    {
+        currentVision = visionRange * WeatherSystem.VisionMultiplier;
+        return currentVision;
+    }
+
     private void OnDrawGizmosSelected()
     {
+        // FEATURE Eventos climaticos: el circulo verde muestra la vision real (afectada por el clima)
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, visionRange);
+        Gizmos.DrawWireSphere(transform.position, Application.isPlaying ? GetEffectiveVision() : visionRange);
 
         Gizmos.color = Color.red;
         Gizmos.DrawSphere(destination, 0.2f);
@@ -167,7 +202,8 @@ public class Predator : MonoBehaviour
 
     Bunny FindNearestBunny()
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, visionRange, LayerMask.GetMask("Bunnies"));
+        // FEATURE Eventos climaticos: busca conejos solo dentro de la vision afectada por el clima
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, GetEffectiveVision(), LayerMask.GetMask("Bunnies"));
         Debug.Log($"Predator {name} encontró {hits.Length} colliders en su rango");
         Bunny nearest = null;
         float minDist = Mathf.Infinity;
